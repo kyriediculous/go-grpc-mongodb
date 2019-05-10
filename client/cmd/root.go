@@ -75,9 +75,9 @@ func init() {
 	// Establish insecure grpc options (no TLS)
 	requestOpts = grpc.WithInsecure()
 	// Dial the server, returns a client connection
-	conn, err := grpc.Dial("localhost:8080", requestOpts)
+	conn, err := grpc.Dial("localhost:50051", requestOpts)
 	if err != nil {
-		log.Fatalf("Unable to establish client connection to localhost:8080: %v", err)
+		log.Fatalf("Unable to establish client connection to localhost:50051: %v", err)
 	}
 
 	// defer posptones the execution of a function until the surrounding function returns

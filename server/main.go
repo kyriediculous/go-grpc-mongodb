@@ -138,6 +138,41 @@ func (s *BlogServiceServer) DeleteBlog(ctx context.Context, req *blogpb.DeleteBl
 	}, nil
 }
 
+func (s *BlogServiceServer) ListBlogs(req *blogpb.ListBlogsReq, stream blogpb.BlogService_ListBlogsServer) error {
+	// Initiate a BlogItem type to write decoded data to
+	data := &BlogItem{}
+	// collection.Find returns a cursor for our (empty) query
+	cursor, err := blogdb.Find(context.Background(), bson.M{})
+	if err != nil {
+		return status.Errorf(codes.Internal, fmt.Sprintf("Unknown internal error: %v", err))
+	}
+	// An expression with defer will be called at the end of the function
+	defer cursor.Close(context.Background())
+	// cursor.Next() returns a boolean, if false there are no more items and loop will break
+	for cursor.Next(context.Background()) {
+		// Decode the data at the current pointer and write it to data
+		err := cursor.Decode(data)
+		// check error
+		if err != nil {
+			return status.Errorf(codes.Unavailable, fmt.Sprintf("Could not decode data: %v", err))
+		}
+		// If no error is found send blog over stream
+		stream.Send(&blogpb.ListBlogsRes{
+			Blog: &blogpb.Blog{
+				Id:       data.ID.Hex(),
+				AuthorId: data.AuthorID,
+				Content:  data.Content,
+				Title:    data.Title,
+			},
+		})
+	}
+	// Check if the cursor has any errors
+	if err := cursor.Err(); err != nil {
+		return status.Errorf(codes.Internal, fmt.Sprintf("Unkown cursor error: %v", err))
+	}
+	return nil
+}
+
 type BlogItem struct {
 	ID       primitive.ObjectID `bson:"_id,omitempty"`
 	AuthorID string             `bson:"author_id"`
@@ -157,12 +192,14 @@ func main() {
 	// Or add timestamps and pipe file name and line number to it:
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	fmt.Println("Starting server on port :8080...")
+	fmt.Println("Starting server on port :50051...")
 
-	listener, err := net.Listen("tcp", ":8080")
+	// 50051 is the default port for gRPC
+	// Ideally we'd use 0.0.0.0 instead of localhost as well
+	listener, err := net.Listen("tcp", ":50051")
 
 	if err != nil {
-		log.Fatalf("Unable to listen on port 8080: %v", err)
+		log.Fatalf("Unable to listen on port :50051: %v", err)
 	}
 
 	// slice of gRPC options
@@ -185,6 +222,8 @@ func main() {
 	err = db.Ping(mongoCtx, nil)
 	if err != nil {
 		log.Fatalf("Could not connect to MongoDB: %v\n", err)
+	} else {
+		fmt.Println("Connected to Mongodb")
 	}
 
 	blogdb = db.Database("mydb").Collection("blog")
@@ -193,10 +232,9 @@ func main() {
 	go func() {
 		if err := s.Serve(listener); err != nil {
 			log.Fatalf("Failed to serve: %v", err)
-		} else {
-			log.Println("Started server on port :8080")
 		}
 	}()
+	fmt.Println("Server succesfully started on port :50051")
 
 	// Bad way to stop the server
 	// if err := s.Serve(listener); err != nil {

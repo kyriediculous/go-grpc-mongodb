@@ -45,9 +45,17 @@ message DeleteBlogRes {
     bool success = 1;
 }
 
+message ListBlogsReq {}
+
+message ListBlogsRes {
+    Blog blog = 1;
+}
+
 service BlogService {
     rpc CreateBlog(CreateBlogReq) returns (CreateBlogRes);
     rpc ReadBlog(ReadBlogReq) returns (ReadBlogRes);
     rpc UpdateBlog(UpdateBlogReq) returns (UpdateBlogRes);
     rpc DeleteBlog(DeleteBlogReq) returns (DeleteBlogRes);
+    rpc ListBlogs(ListBlogsReq) returns (stream ListBlogsRes);
 }
+
