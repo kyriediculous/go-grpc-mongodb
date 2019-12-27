@@ -91,9 +91,9 @@ func (s *BlogServiceServer) UpdateBlog(ctx context.Context, req *blogpb.UpdateBl
 
 	// Convert the data to be updated into an unordered Bson document
 	update := bson.M{
-		"authord_id": blog.GetAuthorId(),
-		"title":      blog.GetTitle(),
-		"content":    blog.GetContent(),
+		"author_id": blog.GetAuthorId(),
+		"title":     blog.GetTitle(),
+		"content":   blog.GetContent(),
 	}
 
 	// Convert the oid into an unordered bson document to search by id

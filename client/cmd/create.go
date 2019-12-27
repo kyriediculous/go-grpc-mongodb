@@ -26,8 +26,8 @@ import (
 var createCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a new blog post",
-	Long: `Create a new blogpost on the server through gRPC. 
-	
+	Long: `Create a new blogpost on the server through gRPC.
+
 	A blog post requires an AuthorId, Title and Content.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		author, err := cmd.Flags().GetString("author")
